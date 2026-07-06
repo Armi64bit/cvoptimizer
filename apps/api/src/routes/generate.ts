@@ -5,7 +5,7 @@ import { createAiClient } from '@cvoptimizer/ai'
 const router = Router()
 
 function getAiClient(req: Request) {
-  const apiKey = req.headers['x-api-key'] as string || process.env.GEMINI_API_KEY || ''
+  const apiKey = req.headers['x-api-key'] as string || process.env.OPENROUTER_API_KEY || ''
   return createAiClient(apiKey)
 }
 
@@ -23,8 +23,8 @@ router.post('/optimize', async (req: Request, res: Response) => {
   } catch (err) {
     const msg = (err as Error).message
     console.error('Optimize error:', msg)
-    if (msg.includes('429') || msg.includes('quota')) {
-      return res.status(429).json({ error: 'Gemini API rate limit hit. Wait 1 minute and try again, or get a new API key at https://aistudio.google.com/apikey' })
+    if (msg.includes('429') || msg.includes('quota') || msg.includes('insufficient_quota')) {
+      return res.status(429).json({ error: 'Rate limit hit. Wait a moment and try again, or check your OpenRouter credits at https://openrouter.ai' })
     }
     res.status(500).json({ error: 'Optimization failed', details: msg })
   }
@@ -58,16 +58,18 @@ router.post('/email', async (req: Request, res: Response) => {
 
 router.post('/test-ai', async (req: Request, res: Response) => {
   try {
-    const apiKey = req.headers['x-api-key'] as string || process.env.GEMINI_API_KEY || ''
-    if (!apiKey) return res.status(400).json({ error: 'No API key found', env: !!process.env.GEMINI_API_KEY })
-    const { GoogleGenerativeAI } = await import('@google/generative-ai')
-    const genAi = new GoogleGenerativeAI(apiKey)
-    const model = genAi.getGenerativeModel({ model: 'gemini-2.0-flash' })
-    const result = await model.generateContent('Say hello in one word')
-    res.json({ success: true, response: result.response.text() })
+    const apiKey = req.headers['x-api-key'] as string || process.env.OPENROUTER_API_KEY || ''
+    if (!apiKey) return res.status(400).json({ error: 'No API key found' })
+    const { default: OpenAI } = await import('openai')
+    const client = new OpenAI({ baseURL: 'https://openrouter.ai/api/v1', apiKey })
+    const result = await client.chat.completions.create({
+      model: 'qwen/qwen-2.5-72b-instruct',
+      messages: [{ role: 'user', content: 'Say hello in one word' }],
+    })
+    res.json({ success: true, response: result.choices[0]?.message?.content })
   } catch (err) {
     console.error('AI test error:', err)
-    res.status(500).json({ error: (err as Error).message, stack: (err as Error).stack })
+    res.status(500).json({ error: (err as Error).message })
   }
 })
 
