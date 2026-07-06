@@ -16,15 +16,17 @@ router.post('/optimize', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'cvText and jobDescription are required' })
     }
     const ai = getAiClient(req)
-    const [optimized, coverLetter, email] = await Promise.all([
-      ai.optimizeCV(body),
-      ai.generateCoverLetter(body),
-      ai.generateEmail(),
-    ])
+    const optimized = await ai.optimizeCV(body)
+    const coverLetter = await ai.generateCoverLetter(body)
+    const email = await ai.generateEmail()
     res.json({ ...optimized, coverLetter, emailDraft: email })
   } catch (err) {
-    console.error('Optimize error:', (err as Error).message, (err as Error).stack)
-    res.status(500).json({ error: 'Optimization failed', details: (err as Error).message })
+    const msg = (err as Error).message
+    console.error('Optimize error:', msg)
+    if (msg.includes('429') || msg.includes('quota')) {
+      return res.status(429).json({ error: 'Gemini API rate limit hit. Wait 1 minute and try again, or get a new API key at https://aistudio.google.com/apikey' })
+    }
+    res.status(500).json({ error: 'Optimization failed', details: msg })
   }
 })
 
