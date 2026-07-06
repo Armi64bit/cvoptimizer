@@ -56,6 +56,42 @@ router.post('/email', async (req: Request, res: Response) => {
   }
 })
 
+router.post('/optimize-stream', async (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+  res.setHeader('X-Accel-Buffering', 'no')
+
+  const send = (data: object) => res.write(`data: ${JSON.stringify(data)}\n\n`)
+
+  try {
+    const body = req.body as OptimizeRequest
+    if (!body.cvText || !body.jobDescription) {
+      send({ type: 'error', message: 'cvText and jobDescription are required' })
+      return res.end()
+    }
+    const ai = getAiClient(req)
+
+    send({ type: 'progress', progress: 5, message: 'Starting optimization...' })
+    const optimized = await ai.optimizeCV(body)
+    send({ type: 'progress', progress: 45, message: 'CV optimized! Writing cover letter...' })
+
+    const coverLetter = await ai.generateCoverLetter(body)
+    send({ type: 'progress', progress: 75, message: 'Cover letter done! Generating email...' })
+
+    const email = await ai.generateEmail()
+    send({ type: 'progress', progress: 100, message: 'Complete!' })
+
+    send({ type: 'result', data: { ...optimized, coverLetter, emailDraft: email } })
+  } catch (err) {
+    const msg = (err as Error).message
+    console.error('Stream optimize error:', msg)
+    send({ type: 'error', message: msg.includes('429') || msg.includes('quota') ? 'Rate limit hit. Wait a moment.' : msg })
+  } finally {
+    res.end()
+  }
+})
+
 router.post('/test-ai', async (req: Request, res: Response) => {
   try {
     const apiKey = req.headers['x-api-key'] as string || process.env.OPENROUTER_API_KEY || ''

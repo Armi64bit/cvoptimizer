@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { CVUploader } from '@/components/CVUploader'
 import { JobInput } from '@/components/JobInput'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { parseCv, optimize } from '@/lib/api'
+import { parseCv, optimizeStream } from '@/lib/api'
 import { Sparkles, Copy, Check } from 'lucide-react'
 import type { OptimizeResponse } from '@cvoptimizer/shared'
 
@@ -13,7 +13,22 @@ export function OptimizerTab() {
   const [jobTitle, setJobTitle] = useState('')
   const [result, setResult] = useState<OptimizeResponse | null>(null)
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [progressMsg, setProgressMsg] = useState('')
   const [copied, setCopied] = useState(false)
+  const progressRef = useRef<number>(0)
+
+  useEffect(() => {
+    if (!loading) return
+    const interval = setInterval(() => {
+      setProgress(prev => {
+        const target = progressRef.current
+        if (prev < target) return Math.min(prev + 1, target)
+        return prev
+      })
+    }, 30)
+    return () => clearInterval(interval)
+  }, [loading])
 
   const handleFileSelect = async (file: File) => {
     try {
@@ -27,9 +42,21 @@ export function OptimizerTab() {
   const handleOptimize = async () => {
     if (!cvText || !jobDesc) return
     setLoading(true)
+    setResult(null)
+    setProgress(0)
+    setProgressMsg('Starting...')
+    progressRef.current = 0
     try {
-      const res = await optimize({ cvText, jobDescription: jobDesc, jobTitle: jobTitle || undefined })
-      setResult(res)
+      const res = await optimizeStream(
+        { cvText, jobDescription: jobDesc, jobTitle: jobTitle || undefined },
+        (p, msg) => {
+          progressRef.current = p
+          setProgressMsg(msg)
+        },
+      )
+      progressRef.current = 100
+      setProgress(100)
+      setTimeout(() => setResult(res), 400)
     } catch (err) {
       alert((err as Error).message)
     } finally {
@@ -73,15 +100,28 @@ export function OptimizerTab() {
         </Card>
       </div>
 
-      <Button
-        className="w-full"
-        size="lg"
-        onClick={handleOptimize}
-        disabled={loading || !cvText || !jobDesc}
-      >
-        <Sparkles className="mr-2 h-5 w-5" />
-        {loading ? 'Optimizing...' : 'Optimize My CV'}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          className="w-full"
+          size="lg"
+          onClick={handleOptimize}
+          disabled={loading || !cvText || !jobDesc}
+        >
+          <Sparkles className="mr-2 h-5 w-5" />
+          {loading ? progressMsg || 'Optimizing...' : 'Optimize My CV'}
+        </Button>
+        {loading && (
+          <div className="space-y-1">
+            <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-center text-xs text-muted-foreground">{progress}%</p>
+          </div>
+        )}
+      </div>
 
       {result && (
         <div className="space-y-6">
