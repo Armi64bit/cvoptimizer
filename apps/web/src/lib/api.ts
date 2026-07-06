@@ -1,6 +1,6 @@
 import type { OptimizeResponse, CVData, JobData, CoachSuggestion } from '@cvoptimizer/shared'
 
-const BASE = import.meta.env.VITE_API_URL || '/api'
+const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
