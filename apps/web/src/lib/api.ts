@@ -45,20 +45,23 @@ export async function optimizeStream(
   return new Promise((resolve, reject) => {
     function read() {
       reader.read().then(({ done, value }) => {
-        if (done) return
-        buffer += decoder.decode(value, { stream: true })
-        for (const line of buffer.split('\n')) {
-          if (line.startsWith('data: ')) {
+        if (value) buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+        for (const line of lines) {
+          const trimmed = line.trim()
+          if (trimmed.startsWith('data: ')) {
             try {
-              const event = JSON.parse(line.slice(6))
+              const event = JSON.parse(trimmed.slice(6))
               if (event.type === 'progress') onProgress(event.progress, event.message)
               else if (event.type === 'result') resolve(event.data)
               else if (event.type === 'error') reject(new Error(event.message))
-            } catch {}
+            } catch (e) {
+              buffer = line + '\n' + buffer
+            }
           }
         }
-        buffer = ''
-        read()
+        if (!done) read()
       }).catch(reject)
     }
     read()

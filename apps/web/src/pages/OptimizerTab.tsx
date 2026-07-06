@@ -3,7 +3,7 @@ import { CVUploader } from '@/components/CVUploader'
 import { JobInput } from '@/components/JobInput'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { parseCv, optimizeStream } from '@/lib/api'
+import { parseCv, optimize } from '@/lib/api'
 import { Sparkles, Copy, Check } from 'lucide-react'
 import type { OptimizeResponse } from '@cvoptimizer/shared'
 
@@ -16,17 +16,28 @@ export function OptimizerTab() {
   const [progress, setProgress] = useState(0)
   const [progressMsg, setProgressMsg] = useState('')
   const [copied, setCopied] = useState(false)
-  const progressRef = useRef<number>(0)
+  const progressRef = useRef(0)
+  const msgRef = useRef('')
 
   useEffect(() => {
-    if (!loading) return
+    if (!loading) { setProgress(0); return }
+    const steps = [
+      { at: 15, msg: 'Analyzing your CV against the job...' },
+      { at: 40, msg: 'Rewriting experience section...' },
+      { at: 60, msg: 'Optimizing skills & keywords...' },
+      { at: 80, msg: 'Generating cover letter...' },
+      { at: 92, msg: 'Finalizing...' },
+    ]
+    let stepIdx = 0
     const interval = setInterval(() => {
-      setProgress(prev => {
-        const target = progressRef.current
-        if (prev < target) return Math.min(prev + 1, target)
-        return prev
-      })
-    }, 30)
+      progressRef.current = Math.min(progressRef.current + 1, 95)
+      if (stepIdx < steps.length && progressRef.current >= steps[stepIdx].at) {
+        msgRef.current = steps[stepIdx].msg
+        setProgressMsg(msgRef.current)
+        stepIdx++
+      }
+      setProgress(progressRef.current)
+    }, 200)
     return () => clearInterval(interval)
   }, [loading])
 
@@ -43,20 +54,16 @@ export function OptimizerTab() {
     if (!cvText || !jobDesc) return
     setLoading(true)
     setResult(null)
-    setProgress(0)
-    setProgressMsg('Starting...')
     progressRef.current = 0
+    msgRef.current = 'Analyzing your CV against the job...'
+    setProgress(0)
+    setProgressMsg(msgRef.current)
     try {
-      const res = await optimizeStream(
-        { cvText, jobDescription: jobDesc, jobTitle: jobTitle || undefined },
-        (p, msg) => {
-          progressRef.current = p
-          setProgressMsg(msg)
-        },
-      )
+      const res = await optimize({ cvText, jobDescription: jobDesc, jobTitle: jobTitle || undefined })
       progressRef.current = 100
       setProgress(100)
-      setTimeout(() => setResult(res), 400)
+      setProgressMsg('Complete!')
+      setTimeout(() => setResult(res), 500)
     } catch (err) {
       alert((err as Error).message)
     } finally {
