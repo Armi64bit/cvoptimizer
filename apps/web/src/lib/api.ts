@@ -1,9 +1,9 @@
 import type { OptimizeResponse, CVData, JobData, CoachSuggestion } from '@cvoptimizer/shared'
 
-const BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '')
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(`${API}/api${path}`, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })
@@ -17,7 +17,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export async function parseCv(file: File): Promise<CVData> {
   const form = new FormData()
   form.append('file', file)
-  const res = await fetch(`${BASE}/cv/parse`, { method: 'POST', body: form })
+  const res = await fetch(`${API}/api/cv/parse`, { method: 'POST', body: form })
   if (!res.ok) throw new Error('Failed to parse CV')
   return res.json()
 }
