@@ -38,12 +38,17 @@ const COACH_SCHEMA = z.object({
   })),
 })
 
+function extractJson(text: string): string {
+  const match = text.match(/```(?:json)?\s*([\s\S]*?)```/)
+  return match ? match[1].trim() : text.trim()
+}
+
 export function createAiClient(apiKey: string, model = 'gemini-2.0-flash') {
   const genAi = new GoogleGenerativeAI(apiKey)
   const genModel: GenerativeModel = genAi.getGenerativeModel({ model })
 
   async function optimizeCV(req: OptimizeRequest) {
-    const prompt = `You are an expert CV optimizer and career coach. Given the following CV text and job description, rewrite the CV to best match the job requirements while keeping all facts truthful.
+    const prompt = `You are an expert CV optimizer. Rewrite this CV to match the job. Return ONLY valid JSON.
 
 CV:
 ${req.cvText}
@@ -52,19 +57,16 @@ Job Title: ${req.jobTitle || 'N/A'}
 Job Description:
 ${req.jobDescription}
 
-Return a JSON object with:
-- optimizedCv: the full rewritten CV text
-- changes: array of { section, before, after, reason } for each change made
-- matchScore: a number 0-100 estimating how well the optimized CV matches the job`
+{ "optimizedCv": "...full rewritten CV...", "changes": [{ "section": "Skills", "before": "...", "after": "...", "reason": "..." }], "matchScore": 85 }`
 
     const result = await genModel.generateContent(prompt)
-    const text = result.response.text()
+    const text = extractJson(result.response.text())
     const parsed = OPTIMIZE_SCHEMA.parse(JSON.parse(text))
     return parsed
   }
 
   async function generateCoverLetter(req: OptimizeRequest): Promise<CoverLetter> {
-    const prompt = `Write a professional cover letter for the following job application. Be specific, reference skills from the CV that match the job.
+    const prompt = `Write a cover letter matching this CV to this job. Return ONLY valid JSON.
 
 CV:
 ${req.cvText}
@@ -73,36 +75,36 @@ Job Title: ${req.jobTitle || 'N/A'}
 Job Description:
 ${req.jobDescription}
 
-Return JSON: { subject: string, body: string }`
+{ "subject": "...", "body": "..." }`
 
     const result = await genModel.generateContent(prompt)
-    const text = result.response.text()
+    const text = extractJson(result.response.text())
     const parsed = COVER_LETTER_SCHEMA.parse(JSON.parse(text))
     return { ...parsed, tone: req.tone || 'professional' }
   }
 
   async function generateEmail(to?: string): Promise<EmailDraft> {
-    const prompt = `Write a professional email to send with a job application. Include a clear subject line, polite greeting, brief introduction, mention of the attached CV and cover letter, and a call to action.
+    const prompt = `Write a job application email. Return ONLY valid JSON.
 
-Return JSON: { subject: string, body: string }`
+{ "subject": "Application for...", "body": "Dear Hiring Manager...\\n\\nPlease find attached..." }`
 
     const result = await genModel.generateContent(prompt)
-    const text = result.response.text()
+    const text = extractJson(result.response.text())
     const parsed = EMAIL_SCHEMA.parse(JSON.parse(text))
     return { ...parsed, to: to || 'hiring@company.com' }
   }
 
   async function getCoachSuggestions(cvText: string, jobDescription?: string): Promise<CoachSuggestion[]> {
-    const prompt = `You are an expert career coach. Analyze this CV${jobDescription ? ' and the target job description' : ''} and suggest improvements.
+    const prompt = `Analyze this CV${jobDescription ? ' for this job' : ''} and suggest improvements. Return ONLY valid JSON.
 
 CV:
 ${cvText}
-${jobDescription ? `\nJob Description:\n${jobDescription}` : ''}
+${jobDescription ? `\nJob:\n${jobDescription}` : ''}
 
-Return JSON: { suggestions: [{ category: "skill"|"project"|"format"|"keyword"|"certification", priority: "high"|"medium"|"low", title: string, description: string, actionItem?: string }] }`
+{ "suggestions": [{ "category": "skill", "priority": "high", "title": "...", "description": "...", "actionItem": "..." }] }`
 
     const result = await genModel.generateContent(prompt)
-    const text = result.response.text()
+    const text = extractJson(result.response.text())
     const parsed = COACH_SCHEMA.parse(JSON.parse(text))
     return parsed.suggestions
   }
