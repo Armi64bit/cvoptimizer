@@ -42,13 +42,17 @@ async function jsonFromModel(client: OpenAI, system: string, user: string, schem
   const res = await client.chat.completions.create({
     model: process.env.AI_MODEL || 'qwen/qwen-2.5-72b-instruct',
     messages: [
-      { role: 'system', content: system },
+      { role: 'system', content: `${system}\n\nYou MUST respond with valid JSON only. No markdown, no code fences.` },
       { role: 'user', content: user },
     ],
-    response_format: { type: 'json_object' },
+    temperature: 0.2,
   })
-  const text = res.choices[0]?.message?.content || ''
-  return schema.parse(JSON.parse(extractJson(text)))
+  const choice = res.choices?.[0]
+  if (!choice?.message?.content) {
+    throw new Error(`AI returned empty response: ${JSON.stringify(res)}`)
+  }
+  const text = extractJson(choice.message.content)
+  return schema.parse(JSON.parse(text))
 }
 
 export function createAiClient(apiKey: string) {
