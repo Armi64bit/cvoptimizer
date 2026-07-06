@@ -10,9 +10,8 @@ import coachRoutes from './routes/coach.js'
 const app = express()
 const PORT = process.env.PORT || 3001
 
+app.use(cors())
 app.use(helmet())
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(s => s.trim())
-app.use(cors({ origin: allowedOrigins }))
 app.use(morgan('dev'))
 app.use(express.json({ limit: '10mb' }))
 
