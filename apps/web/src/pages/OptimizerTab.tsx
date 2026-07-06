@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { CVUploader } from '@/components/CVUploader'
 import { JobInput } from '@/components/JobInput'
+import { ResumePreview } from '@/components/ResumePreview'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { parseCv, optimize } from '@/lib/api'
@@ -135,13 +136,27 @@ export function OptimizerTab() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Optimized CV</CardTitle>
-              <Button variant="outline" size="sm" onClick={copyResult}>
-                {copied ? <Check className="mr-1 h-4 w-4" /> : <Copy className="mr-1 h-4 w-4" />}
-                {copied ? 'Copied' : 'Copy'}
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={copyResult}>
+                  {copied ? <Check className="mr-1 h-4 w-4" /> : <Copy className="mr-1 h-4 w-4" />}
+                  {copied ? 'Copied' : 'Copy Text'}
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <pre className="whitespace-pre-wrap rounded-lg bg-muted p-4 text-sm">{result.optimizedCv}</pre>
+              <ResumePreview
+                sections={result.sections}
+                name={
+                  result.optimizedCv.split('\n')[0]?.trim()
+                }
+                email={
+                  result.optimizedCv.match(/[\w.-]+@[\w.-]+\.\w+/)?.[0]
+                }
+                phone={
+                  result.optimizedCv.match(/[\+]?[\d\s()-]{7,20}/)?.[0]
+                }
+                atsScore={result.atsScore}
+              />
             </CardContent>
           </Card>
 

@@ -11,6 +11,11 @@ const OPTIMIZE_SCHEMA = z.object({
     reason: z.string(),
   })),
   matchScore: z.number().min(0).max(100),
+  atsScore: z.number().min(0).max(100),
+  sections: z.array(z.object({
+    heading: z.string(),
+    content: z.array(z.string()),
+  })),
 })
 
 const COVER_LETTER_SCHEMA = z.object({
@@ -64,8 +69,8 @@ export function createAiClient(apiKey: string) {
 
   async function optimizeCV(req: OptimizeRequest) {
     return jsonFromModel(client,
-      'You are an expert CV optimizer. Rewrite CVs to match job descriptions. Keep all facts truthful. Respond with JSON.',
-      `CV:\n${req.cvText}\n\nJob: ${req.jobTitle || 'N/A'}\n${req.jobDescription}\n\nReturn: { "optimizedCv": "...", "changes": [{ "section": "...", "before": "...", "after": "...", "reason": "..." }], "matchScore": 0-100 }`,
+      'You are an expert CV optimizer. Rewrite CVs to match job descriptions and optimize for ATS parsing. Keep all facts truthful. Respond with JSON.',
+      `CV:\n${req.cvText}\n\nJob: ${req.jobTitle || 'N/A'}\n${req.jobDescription}\n\nReturn JSON: { "optimizedCv": "...full rewritten CV text...", "sections": [{ "heading": "Experience", "content": ["bullet 1", "bullet 2"] }], "changes": [{ "section": "Skills", "before": "...", "after": "...", "reason": "..." }], "matchScore": 0-100, "atsScore": 0-100 }`,
       OPTIMIZE_SCHEMA,
     )
   }

@@ -74,4 +74,6 @@ export interface OptimizeResponse {
   emailDraft: EmailDraft
   changes: ChangeLog[]
   matchScore: number
+  atsScore: number
+  sections: CvSection[]
 }
