@@ -1,4 +1,4 @@
-import type { OptimizeResponse, CVData, JobData, CoachSuggestion } from '@cvoptimizer/shared'
+import type { OptimizeResponse, CVData, JobData, CoachSuggestion, Application } from '@cvoptimizer/shared'
 
 const API = (import.meta.env.VITE_API_URL || '').replace(/\/+$/, '')
 
@@ -74,4 +74,20 @@ export async function optimize(data: { cvText: string; jobDescription: string; j
 
 export async function getCoachSuggestions(data: { cvText: string; jobDescription?: string }): Promise<{ suggestions: CoachSuggestion[] }> {
   return request('/coach/suggestions', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function getApplications(): Promise<Application[]> {
+  return request('/applications')
+}
+
+export async function createApplication(data: Partial<Application>): Promise<Application> {
+  return request('/applications', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function updateApplication(id: string, data: Partial<Application>): Promise<Application> {
+  return request(`/applications/${id}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export async function deleteApplication(id: string): Promise<void> {
+  await fetch(`${API}/api/applications/${id}`, { method: 'DELETE' })
 }

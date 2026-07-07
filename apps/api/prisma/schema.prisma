@@ -7,10 +7,18 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Optimization {
+model Application {
   id        String   @id @default(uuid())
-  cvText    String
-  jobDesc   String
-  result    String
+  company   String
+  position  String
+  jobUrl    String   @default("")
+  source    String   @default("")
+  cvUsed    String   @default("")
+  status    String   @default("applied")
+  notes     String   @default("")
+  replied   Boolean  @default(false)
+  appliedAt DateTime @default(now())
+  repliedAt DateTime?
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

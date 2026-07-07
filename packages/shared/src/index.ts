@@ -61,6 +61,22 @@ export interface AiProvider {
   apiKey: string
 }
 
+export interface Application {
+  id: string
+  company: string
+  position: string
+  jobUrl: string
+  source: string
+  cvUsed: string
+  status: string
+  notes: string
+  replied: boolean
+  appliedAt: string
+  repliedAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
 export interface OptimizeRequest {
   cvText: string
   jobDescription: string

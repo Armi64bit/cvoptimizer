@@ -6,6 +6,7 @@ import cvRoutes from './routes/cv.js'
 import jobRoutes from './routes/jobs.js'
 import generateRoutes from './routes/generate.js'
 import coachRoutes from './routes/coach.js'
+import applicationRoutes from './routes/applications.js'
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -21,6 +22,7 @@ app.use('/api/cv', cvRoutes)
 app.use('/api/jobs', jobRoutes)
 app.use('/api/generate', generateRoutes)
 app.use('/api/coach', coachRoutes)
+app.use('/api/applications', applicationRoutes)
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found' }))
 
