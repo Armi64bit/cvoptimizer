@@ -82,7 +82,7 @@ export function createAiClient(apiKey: string) {
 
   async function optimizeCV(req: OptimizeRequest) {
     return jsonFromModel(client,
-      'You are an expert CV optimizer. Rewrite CVs to match job descriptions and optimize for ATS parsing. Keep all facts truthful. Respond with JSON.',
+      'You are an expert CV optimizer. Rewrite the CV to better match the job description while PRESERVING ALL original details — dates, company names, job titles, bullet points, metrics, technologies, and projects. Do NOT remove or condense any experience or project entries. Only rephrase bullets to emphasize relevant keywords and skills from the job description. Keep the same number of bullets per entry. Add relevant missing keywords where natural, but never delete existing content. Respond with JSON.',
       `CV:\n${req.cvText}\n\nJob: ${req.jobTitle || 'N/A'}\n${req.jobDescription}\n\nReturn JSON: { "optimizedCv": "...full rewritten CV text...", "sections": [{ "heading": "Experience", "content": ["bullet 1", "bullet 2"] }], "changes": [{ "section": "Skills", "before": "...", "after": "...", "reason": "..." }], "matchScore": 0-100, "atsScore": 0-100 }`,
       OPTIMIZE_SCHEMA,
     )
