@@ -1,0 +1,6 @@
+{
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm turbo build --filter=@cvoptimizer/web",
+  "outputDirectory": "apps/web/dist",
+  "framework": "vite"
+}
