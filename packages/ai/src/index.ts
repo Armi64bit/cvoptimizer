@@ -43,21 +43,34 @@ function extractJson(text: string): string {
   return match ? match[1].trim() : text.trim()
 }
 
+const MODELS = [
+  process.env.AI_MODEL,
+  'meta-llama/llama-3.3-70b-instruct',
+  'qwen/qwen-2.5-72b-instruct',
+  'google/gemini-2.0-flash-001',
+].filter(Boolean) as string[]
+
 async function jsonFromModel(client: OpenAI, system: string, user: string, schema: z.ZodTypeAny) {
-  const res = await client.chat.completions.create({
-    model: process.env.AI_MODEL || 'qwen/qwen-2.5-72b-instruct',
-    messages: [
-      { role: 'system', content: `${system}\n\nYou MUST respond with valid JSON only. No markdown, no code fences.` },
-      { role: 'user', content: user },
-    ],
-    temperature: 0.2,
-  })
-  const choice = res.choices?.[0]
-  if (!choice?.message?.content) {
-    throw new Error(`AI returned empty response: ${JSON.stringify(res)}`)
+  let lastErr: unknown
+  for (const model of MODELS) {
+    try {
+      const res = await client.chat.completions.create({
+        model,
+        messages: [
+          { role: 'system', content: `${system}\n\nYou MUST respond with valid JSON only. No markdown, no code fences.` },
+          { role: 'user', content: user },
+        ],
+        temperature: 0.2,
+      })
+      const choice = res.choices?.[0]
+      if (!choice?.message?.content) continue
+      const text = extractJson(choice.message.content)
+      return schema.parse(JSON.parse(text))
+    } catch (e) {
+      lastErr = e
+    }
   }
-  const text = extractJson(choice.message.content)
-  return schema.parse(JSON.parse(text))
+  throw new Error(`All AI models failed. Last error: ${(lastErr as Error)?.message || lastErr}`)
 }
 
 export function createAiClient(apiKey: string) {
