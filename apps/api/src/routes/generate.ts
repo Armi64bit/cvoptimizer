@@ -19,7 +19,7 @@ router.post('/optimize', async (req: Request, res: Response) => {
     const optimized = await ai.optimizeCV(body)
     const coverLetter = await ai.generateCoverLetter(body)
     const email = await ai.generateEmail()
-    res.json({ ...optimized, coverLetter, emailDraft: email })
+    res.json({ ...optimized, coverLetter, emailDraft: email, instructions: body.instructions })
   } catch (err) {
     const msg = (err as Error).message
     console.error('Optimize error:', msg)

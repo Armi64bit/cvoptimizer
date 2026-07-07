@@ -82,6 +82,7 @@ export interface OptimizeRequest {
   jobDescription: string
   jobTitle?: string
   tone?: 'professional' | 'enthusiastic' | 'concise'
+  instructions?: string
 }
 
 export interface OptimizeResponse {

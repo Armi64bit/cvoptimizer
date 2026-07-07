@@ -81,9 +81,10 @@ export function createAiClient(apiKey: string) {
   })
 
   async function optimizeCV(req: OptimizeRequest) {
+    const extra = req.instructions ? `\n\nAdditional instructions from user: ${req.instructions}` : ''
     return jsonFromModel(client,
-      'You are an expert CV optimizer. Rewrite the CV to better match the job description while PRESERVING ALL original details — dates, company names, job titles, bullet points, metrics, technologies, and projects. Do NOT remove or condense any experience or project entries. Only rephrase bullets to emphasize relevant keywords and skills from the job description. Keep the same number of bullets per entry. Add relevant missing keywords where natural, but never delete existing content. Respond with JSON.',
-      `CV:\n${req.cvText}\n\nJob: ${req.jobTitle || 'N/A'}\n${req.jobDescription}\n\nReturn JSON: { "optimizedCv": "...full rewritten CV text...", "sections": [{ "heading": "Experience", "content": ["bullet 1", "bullet 2"] }], "changes": [{ "section": "Skills", "before": "...", "after": "...", "reason": "..." }], "matchScore": 0-100, "atsScore": 0-100 }`,
+      'You are an expert CV optimizer. CRITICAL: Preserve EVERY proper noun — company names, job titles, project names, technologies, schools, degrees, certifications, and locations exactly as written. NEVER remove or rename any named entity. Keep ALL section headings, dates, and bullet points. Reword bullet verbs to match job description keywords ONLY by adding synonyms alongside original text, never replacing it. Output every single experience and project entry from the original CV — do not drop or merge any. Respond with JSON.',
+      `CV:\n${req.cvText}\n\nJob: ${req.jobTitle || 'N/A'}\n${req.jobDescription}${extra}\n\nReturn JSON: { "optimizedCv": "...full rewritten CV text...", "sections": [{ "heading": "Experience", "content": ["bullet 1", "bullet 2"] }], "changes": [{ "section": "Skills", "before": "...", "after": "...", "reason": "..." }], "matchScore": 0-100, "atsScore": 0-100 }`,
       OPTIMIZE_SCHEMA,
     )
   }
