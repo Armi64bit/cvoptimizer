@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && prisma generate && prisma db push",
+    "build": "tsc && prisma generate",
     "start": "node dist/index.js",
     "lint": "tsc --noEmit",
     "db:generate": "prisma generate",
@@ -17,7 +17,6 @@
     "@google/generative-ai": "^0.21.0",
     "@prisma/client": "6.19.3",
     "cheerio": "^1.0.0",
-    "@prisma/client": "6.19.3",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "helmet": "^8.0.0",
